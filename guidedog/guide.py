@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from .obstacles import Alert
 from .perception import Scene
 
 
@@ -16,6 +17,11 @@ class Guide:
     def __init__(self, name: str = "萝卜"):
         self.name = name
         self.asking_for_help = False  # waiting for strangers to clear the blind path
+
+    def on_obstacle(self, alert: Alert) -> tuple:
+        """Sensor alert -> (what to say right now, whether to take a photo to say what it is)."""
+        say = [Say("owner", alert.text, "alert" if alert.urgent else "nod")]
+        return say, alert.kind in ("stop", "near", "drop")
 
     def on_scene(self, scene: Scene, asked: bool = False) -> list:
         """asked=True when the owner asked a question; otherwise this is a routine look while walking."""

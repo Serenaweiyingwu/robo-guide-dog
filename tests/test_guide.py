@@ -46,3 +46,19 @@ def test_unmovable_blocker_means_detour_not_asking_strangers():
     said = Guide().on_scene(scene(description="盲道被汽车挡住，请向左绕行。", blocked=True,
                                   blockers=["汽车"], movable=False, people_nearby=True))
     assert [s.to for s in said] == ["owner"]
+
+
+def test_obstacle_alert_is_spoken_then_dog_looks_to_say_what_it_is():
+    from guidedog.obstacles import ObstacleWatch
+
+    alert = ObstacleWatch().update(front_m=0.8)[0]
+    say, look = Guide().on_obstacle(alert)
+    assert [(s.to, s.text, s.gesture) for s in say] == [("owner", "停，前方一米内有障碍。", "alert")]
+    assert look
+
+
+def test_clear_alert_needs_no_photo():
+    from guidedog.obstacles import Alert
+
+    say, look = Guide().on_obstacle(Alert("clear", 3.0, "前方没有障碍了。", False))
+    assert say[0].text == "前方没有障碍了。" and not look
