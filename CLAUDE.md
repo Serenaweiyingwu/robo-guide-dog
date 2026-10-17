@@ -36,8 +36,24 @@ longer history (event handbook, Hightorque docs, Doubao console steps).
   have `info=False` so 再说一遍 repeats real information. `PhotoCamera` + `LaptopBody` stand in for the robot.
 - Live text-mode rehearsal (2026-10-18) worked end to end; two bugs it found are fixed and tested.
 
+- **Vbot connection (2026-10-18)**, `guidedog/vbot.py`: finds every interface **by type** on the ROS graph
+  (env overrides `VBOT_*`), `VbotCamera`, `VbotBody` (16 kHz speech streamed ~real time, interruptible;
+  turn to stranger via recent DOA (≤ 20 s, sign flipped: DOA clockwise vs BaseAction CCW) else 45°;
+  head gestures; stop/follow). `talk --vbot` runs a 5 Hz sensing thread. Speech is serialised by a lock;
+  any non-"clear" obstacle alert **interrupts** current speech; urgent ones stop the dog first.
+  Tested against `sim/vbot_mock.py` (same types, made-up `/mock/...` names, photos as camera, saves speaker
+  audio to `testdata/mock_speaker/`, world via `ros2 param set /vbot_mock front_m|step_m|doa_deg`):
+  discovery found all 8, camera/speaker/rotate/stop worked, interruption and DOA turn (−90° for a voice at
+  90°) verified. Run everything ROS through `scripts/ros.sh` (pixi env + `~/vbot_ws`).
+  GUESSES to confirm on the dog: `VBOT_FRONT_INDEX` (range_obstacle order), `VBOT_CAMERA_CHANNEL`, STOP via
+  `ControlFollowing(target_state=1, mode=STOP)`, HeightMap in metres and same frame as `SportModeState.position`,
+  yaw = `imu_state.rpy[2]`, head angle signs, whether the speaker plays `AgentToSpeechAudioRaw` from us.
+  DOA only arrives when someone says the dog's own wake word "大头大头".
+- **ROS 2 gotcha**: a stale `ros2` daemon (or a hung `ros2 service call`) makes `ros2 ... list` hang forever.
+  Kill it (`pkill -9 -f ros2cli.daemon`) or use `--no-daemon`.
+
 **Not done:**
-1. **Vbot body + camera** (`VbotBody`, `VbotCamera`): blocked on Vbot support (see below).
+1. **Real dog**: join its network (likely Zenoh), check discovery output, fix the GUESSES above.
 2. One **real microphone** run (only text mode tried so far).
 3. **Submission** materials for 10-22.
 

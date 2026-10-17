@@ -23,6 +23,22 @@ Obstacles come from the dog's own sensors, not the camera: "注意，前方有�
 stops first), steps and drops from the height map. Alerts are pre-synthesised so they play instantly, and Kiki
 then takes a photo to say what's in the way.
 
+## On the Vbot dog
+
+`guidedog/vbot.py` drives the 维他动力 Vbot 大头 over ROS 2 (types from
+[vbot_ros2_msgs](https://github.com/VitaDynamics/vbot_ros2_msgs)). Topic/service names aren't documented, so
+Kiki **finds each interface by its type** on the ROS graph; override any with `VBOT_SPEAKER=/name` etc.
+Camera `GetJpegImages`, speech streamed to `AgentToSpeechAudioRaw` (16 kHz), stop/follow via
+`ControlFollowing`, turning via `BaseAction` (towards the voice direction from `WakeupInfo` when recent),
+head gestures via `HeadCmd`, obstacles from `SportModeState.range_obstacle` + `HeightMap`.
+Obstacle warnings interrupt whatever Kiki is saying; urgent ones stop the dog first.
+
+```bash
+scripts/ros.sh python -m guidedog talk --vbot          # needs the ROS 2 env (see CLAUDE.md)
+scripts/ros.sh python sim/vbot_mock.py photo.jpg ...    # a stand-in dog for testing on the laptop
+scripts/ros.sh ros2 param set /vbot_mock front_m 0.8    # make an obstacle appear (also step_m, doa_deg)
+```
+
 ## How it works
 
 ```

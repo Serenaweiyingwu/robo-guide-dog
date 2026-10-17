@@ -16,7 +16,7 @@ class FakeAI:
         self.questions.append(text)
         return self.scenes.pop(0)
 
-    def speak(self, text, lang):
+    def speak(self, text, lang, rate=24000):
         self.spoken.append(text)
         return b"pcm"
 
@@ -121,3 +121,29 @@ def test_cleared_path_still_answers_the_question():
     d.hear("Kiki，前面有什么？")
     d.hear("Kiki，前面有什么？")
     assert ai.spoken[-3:] == ["谢谢您！", "盲道通了。", "前方是人行道，没有障碍。"]
+
+
+def test_obstacle_alert_cuts_off_a_long_description():
+    import threading
+    import time
+
+    long_text = "前方是一条很长的林荫人行道，" * 3
+    d, ai, body = dog([{**CLEAR, "description": long_text}, BIKES])
+    spoken_while_busy = []
+
+    def slow_say(pcm, rate):  # a speaker that takes a while, and can be interrupted
+        for _ in range(20):
+            if d.interrupted.is_set():
+                return
+            time.sleep(0.02)
+        spoken_while_busy.append("finished")
+
+    body.say = slow_say
+    talker = threading.Thread(target=d.hear, args=("Kiki，前面有什么？",))
+    talker.start()
+    time.sleep(0.05)
+    d.sense(front_m=0.7)  # obstacle while Kiki is mid-description
+    talker.join()
+    assert "停，前方一米内有障碍。" in ai.spoken
+    assert "stop" in body.events
+    assert spoken_while_busy.count("finished") < len(ai.spoken)  # the long description was cut short

@@ -74,8 +74,8 @@ class Doubao:
             raise DoubaoError(f"LLM returned no JSON: {text[:300]}")
         return json.loads(match.group(0))
 
-    def speak(self, text: str, lang: str) -> bytes:
-        """Text to speech. Returns 16-bit mono PCM at TTS_SAMPLE_RATE."""
+    def speak(self, text: str, lang: str, rate: int = TTS_SAMPLE_RATE) -> bytes:
+        """Text to speech. Returns 16-bit mono PCM at `rate` (the Vbot speaker wants 16000)."""
         r = self.http.post(
             TTS_URL,
             headers={
@@ -87,7 +87,7 @@ class Doubao:
                 "req_params": {
                     "text": text,
                     "speaker": self.s.tts_voices.get(lang, self.s.tts_voice),
-                    "audio_params": {"format": "pcm", "sample_rate": TTS_SAMPLE_RATE},
+                    "audio_params": {"format": "pcm", "sample_rate": rate},
                     "additions": json.dumps({"explicit_language": LANGUAGES[lang].tts}),
                 }
             },
