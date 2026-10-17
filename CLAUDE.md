@@ -6,7 +6,7 @@ its `CLAUDE.md` has the event, Doubao account, Vbot interface and ROS 2 setup no
 
 ## Goal (user, 2026-10-18)
 A Chinese-speaking guide dog on the **Vbot 大头**: describe everything in words to the blind owner, and talk
-to strangers to move bikes off the blind path (盲道). Persona: 导盲犬萝卜 (wake word "Robo"/萝卜).
+to strangers to move bikes off the blind path (盲道). Persona: **导盲犬Kiki** (renamed from 萝卜 on 2026-10-18; wake word accepts Kiki/琪琪/奇奇/七七...).
 
 ## Status
 - Vision works with `doubao-seed-2-1-lite-260915` via `Doubao.see_json` (data-URI JPEG), ~2–4 s per photo.
@@ -23,7 +23,14 @@ to strangers to move bikes off the blind path (盲道). Persona: 导盲犬萝卜
   `lowlevel_msg/SportModeState.range_obstacle` (float[4] distances; **direction order unknown**, confirm on the
   robot), `function_msgs/srv/GetGuard` (front/left/right/rear occupancy + has_obstacle), HeightMap units
   assumed metres. Tested on simulated readings only.
-- Not built yet: owner voice questions (reuse wake word + ASR from robo-translator), the Vbot body
+- **Voice + dog loop (2026-10-18)**: `voice.py` (wake regex Kiki/琪琪/奇奇/七七…, local command patterns, "停"
+  first), `dog.py` `GuideDog` (hear / sense / walk_tick / look / speak; `warm_up()` pre-synthesises fixed
+  phrases; acks have `info=False` so "再说一遍" repeats real information), `PhotoCamera` + `LaptopBody` stand-ins,
+  `python -m guidedog talk ... --text` with `!front/!step/!clear/!tick` sensor simulation. 31 offline tests.
+  Live text-mode run 2026-10-18 found + fixed: false "path cleared" skipping the description, and repeat
+  echoing acknowledgements. `PhotoCamera` cycles photos, so a follow-up look sees a *different* scene
+  (test artifact, not real-world behaviour).
+- Not built yet: the Vbot body
   (camera `camera_msgs/srv/GetJpegImages`, speaker `AgentToSpeechAudioRaw` 16 kHz, turn to strangers via
   `BaseAction` / voice direction from `WakeupInfo` DOA, head gestures, following). Waiting on Vbot support
   for topic/service names and the Zenoh network setup.

@@ -11,12 +11,14 @@ class Say:
     to: str  # "owner" or "stranger"
     text: str
     gesture: str = ""  # alert, nod, look_around, happy, ...
+    info: bool = True  # real information (worth repeating), not an acknowledgement like "好的"
 
 
 class Guide:
-    def __init__(self, name: str = "萝卜"):
+    def __init__(self, name: str = "Kiki"):
         self.name = name
         self.asking_for_help = False  # waiting for strangers to clear the blind path
+        self.chatty = False  # describe every routine look, not only when something matters
 
     def on_obstacle(self, alert: Alert) -> tuple:
         """Sensor alert -> (what to say right now, whether to take a photo to say what it is)."""
@@ -28,14 +30,18 @@ class Guide:
         out = []
         if self.asking_for_help and not scene.blocked:
             self.asking_for_help = False
-            out += [Say("stranger", "谢谢您！", "happy"), Say("owner", "盲道通了，可以继续走。", "nod")]
-            return out
-        if asked or scene.urgent or scene.blocked:
+            out += [Say("stranger", "谢谢您！", "happy"), Say("owner", "盲道通了。", "nod")]
+        if asked or self.chatty or scene.urgent or scene.blocked:
             out.append(Say("owner", scene.description, "alert" if scene.urgent else "nod"))
         if scene.blocked and scene.movable and scene.people_nearby and not self.asking_for_help:
-            self.asking_for_help = True
-            what = "、".join(scene.blockers) or "东西"
-            out.append(Say("owner", "我请旁边的人帮忙挪一下。", "nod"))
-            out.append(Say("stranger", f"您好，打扰一下！我是导盲犬{self.name}。盲道被{what}挡住了，"
-                                       "我的主人看不见，能麻烦您帮忙挪一下吗？谢谢您！", "look_around"))
+            out += self.ask_for_help(scene)
         return out
+
+    def ask_for_help(self, scene: Scene) -> list:
+        """Ask passers-by to clear the way (automatically, or when the owner asks Kiki to)."""
+        self.asking_for_help = True
+        what = "、".join(scene.blockers) or "东西"
+        problem = f"盲道被{what}挡住了" if scene.blocked else f"前面有{what}挡着路"
+        return [Say("owner", "我请旁边的人帮忙。", "nod"),
+                Say("stranger", f"您好，打扰一下！我是导盲犬{self.name}。{problem}，"
+                                "我的主人看不见，能麻烦您帮忙挪一下吗？谢谢您！", "look_around")]

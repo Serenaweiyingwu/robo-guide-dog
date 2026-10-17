@@ -30,7 +30,7 @@ def test_bikes_on_blind_path_tells_owner_then_asks_strangers_once():
     g = Guide()
     said = g.on_scene(scene(**BIKES))
     assert [s.to for s in said] == ["owner", "owner", "stranger"]
-    assert "共享单车" in said[-1].text and "导盲犬萝卜" in said[-1].text
+    assert "共享单车" in said[-1].text and "导盲犬Kiki" in said[-1].text
     again = g.on_scene(scene(**BIKES))
     assert [s.to for s in again] == ["owner"]  # doesn't repeat the request every look
 
@@ -39,7 +39,7 @@ def test_thanks_strangers_when_cleared():
     g = Guide()
     g.on_scene(scene(**BIKES))
     said = g.on_scene(scene(blind_path_visible=True))
-    assert [(s.to, s.text) for s in said] == [("stranger", "谢谢您！"), ("owner", "盲道通了，可以继续走。")]
+    assert [(s.to, s.text) for s in said] == [("stranger", "谢谢您！"), ("owner", "盲道通了。")]
 
 
 def test_unmovable_blocker_means_detour_not_asking_strangers():

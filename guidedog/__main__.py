@@ -24,7 +24,14 @@ def main() -> None:
     lk.add_argument("--ask", default="", help="the owner's question")
     lk.add_argument("--speak", action="store_true", help="play the speech")
     lk.add_argument("--wav", help="folder to save the speech in")
+    tk = sub.add_parser("talk", help="talk to Kiki; the photos stand in for her camera")
+    tk.add_argument("photos", nargs="+")
+    tk.add_argument("--text", action="store_true", help="type instead of speaking (also: !front 0.8, !step -0.12, !tick)")
+    tk.add_argument("--mute", action="store_true")
     args = p.parse_args()
+
+    if args.cmd == "talk":
+        return talk(args)
 
     ai, guide = Doubao(load_settings()), Guide()
     for n, path in enumerate(args.photos):
@@ -39,6 +46,41 @@ def main() -> None:
                     open(f"{args.wav}/{n:02d}_{i}_{s.to}.wav", "wb").write(to_wav(pcm, TTS_SAMPLE_RATE))
                 if args.speak:
                     play(pcm, TTS_SAMPLE_RATE)
+
+
+def talk(args) -> None:
+    from .dog import GuideDog, LaptopBody, PhotoCamera
+
+    ai = Doubao(load_settings())
+    kiki = GuideDog(ai, PhotoCamera(args.photos), LaptopBody(mute=args.mute))
+    print("Kiki is waking up...")
+    kiki.warm_up()
+    print('Say "Kiki，前面有什么？" (or 停 / 跟着我 / 安静 / 多说点 / 再说一遍 / 请人帮忙). Ctrl+C quits.')
+    if args.text:
+        print("Text mode. Simulate sensors with: !front 0.8   !step -0.12   !clear   !tick")
+    else:
+        from .audio import Mic
+
+        mic = Mic()
+        mic.calibrate()
+    while True:
+        try:
+            line = input("> ").strip() if args.text else ai.transcribe(mic.listen(), None)
+            if line.startswith("!front"):
+                kiki.sense(front_m=float(line.split()[1]))
+            elif line.startswith("!step"):
+                kiki.sense(terrain=(1.0, float(line.split()[1])))
+            elif line == "!clear":
+                kiki.sense(front_m=5.0)
+            elif line == "!tick":
+                kiki.walk_tick()
+            elif line:
+                kiki.hear(line)
+        except (KeyboardInterrupt, EOFError):
+            print("\nKiki goes to sleep.")
+            return
+        except Exception as e:  # keep the dog running through network hiccups
+            print(f"  [error] {e}")
 
 
 if __name__ == "__main__":
